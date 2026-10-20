@@ -38,12 +38,17 @@ A lightweight, responsive web application designed for students to organize, man
 - **Label search** — prefix query with `#` (e.g. `#work`) to filter by label instead of title.
 - **Search does not mutate saved notes** — underlying data is never modified during search.
 
-### 5. Accessibility & UI
+### 5. Text Export
+- Use **Export .txt** in the search bar to download all active notes as `student-notes.txt`.
+- The plain-text file lists each note's title, subject, and full content with clear separators.
+- Export does not alter saved notes; when there are no notes, the app displays a message instead of downloading an empty file.
+
+### 6. Accessibility & UI
 - Fully responsive across desktop and mobile screens.
 - **Dark Mode** toggle with local storage persistence.
 - Safe DOM construction (`textContent`) to prevent XSS.
 
-### 6. Keyboard Shortcuts
+### 7. Keyboard Shortcuts
 - `Alt + N` — Focus new note title input
 - `Alt + S` — Focus search bar
 - `Alt + C` — Toggle case-sensitive title search *(new)*
@@ -96,7 +101,13 @@ node tests/title-search.test.js
 ```
 *Executes 18 title search tests: case-insensitive/sensitive, scope selector, category filter, labels, Unicode, mutation safety, and edge cases — 100% pass rate.*
 
-### 3. Run In-Browser Test Suite
+### 3. Run Text Export Tests (Node.js)
+```bash
+node tests/text-export.test.js
+```
+*Covers export formatting, all required note fields, multiple notes, Unicode, legacy content, and mutation safety.*
+
+### 4. Run In-Browser Test Suite
 Open `tests.html` in your browser:
 ```powershell
 Start-Process tests.html
@@ -115,7 +126,8 @@ rospl-project/
 ├── tests.html                  # Interactive browser test runner
 ├── tests/
 │   ├── crud-regression.test.js # Headless CRUD regression tests — 12 cases (Member 1)
-│   └── title-search.test.js    # Headless title search tests — 18 cases (Member 2)
+│   ├── title-search.test.js    # Headless title search tests — 18 cases (Member 2)
+│   └── text-export.test.js     # Plain-text export formatting tests
 ├── PRD.md                      # Product Requirements Document
 ├── AGENTS.md                   # Collaboration and agent contribution guide
 ├── README.md                   # Project documentation
