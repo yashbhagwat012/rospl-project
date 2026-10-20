@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOTESTACK</title>
+    <title>NOTESTACK - Student Notes Manager</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -13,38 +13,42 @@
     <div class="app">
 
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" aria-label="Navigation Sidebar">
             <div>
                 <h2>📝 NoteStack</h2>
-                <ul>
-                    <li class="active" id="navNotes">📝 All Notes</li>
-                    <li id="navImportant">🔴 Important</li>
-                    <li id="navWork">🟡 Work</li>
-                    <li id="navPersonal">🔵 Personal</li>
-                    <li id="navIdeas">🟢 Ideas</li>
-                    <li id="navTrash">🗑️ Trash</li>
+                <ul role="menu">
+                    <li class="active" id="navNotes" role="menuitem" tabindex="0">📝 All Notes</li>
+                    <li id="navImportant" role="menuitem" tabindex="0">🔴 Important</li>
+                    <li id="navWork" role="menuitem" tabindex="0">🟡 Work</li>
+                    <li id="navPersonal" role="menuitem" tabindex="0">🔵 Personal</li>
+                    <li id="navIdeas" role="menuitem" tabindex="0">🟢 Ideas</li>
+                    <li id="navTrash" role="menuitem" tabindex="0">🗑️ Trash</li>
                 </ul>
                 <div class="custom-folders-section">
                     <ul id="customFoldersList">
                         <!-- Dynamic folders will be injected here -->
                     </ul>
-                    <button id="newFolderBtn" class="sidebar-btn">➕ New Folder</button>
+                    <button id="newFolderBtn" class="sidebar-btn" type="button">➕ New Folder</button>
                 </div>
             </div>
-            <button id="darkModeBtn">🌙 Dark Mode</button>
+            <button id="darkModeBtn" type="button" aria-label="Toggle dark mode">🌙 Dark Mode</button>
         </aside>
 
         <!-- Main Section -->
-        <main class="main">
+        <main class="main" role="main">
 
             <header class="topbar">
-                <input type="text" id="searchInput" placeholder="Search notes...">
+                <input type="text" id="searchInput" placeholder="Search notes..." aria-label="Search notes">
             </header>
 
             <!-- NOTES VIEW -->
             <div id="notesView">
-                <section class="create-note">
-                    <textarea id="noteInput" placeholder="Take a note..."></textarea>
+                <section class="create-note" aria-label="Create new note">
+                    <div id="noteValidationMsg" class="validation-msg" style="display:none;" role="alert"></div>
+                    <input type="text" id="noteTitleInput" placeholder="Note Title (required)" class="note-title-input" aria-label="Note Title">
+                    <input type="text" id="noteSubjectInput" placeholder="Subject (e.g., Mathematics, CS, DBMS)" class="note-subject-input" aria-label="Note Subject">
+                    <textarea id="noteInput" placeholder="Take a note... (required)" aria-label="Note Content"></textarea>
+                    
                     <!-- Color Labels Section -->
                     <div class="label-selector">
                         <span class="label-title">Labels:</span>
@@ -69,34 +73,70 @@
                     </div>
                     <!-- Folder Selection -->
                     <div class="folder-selector">
-                        <select id="folderSelect">
+                        <select id="folderSelect" aria-label="Select Folder">
                             <option value="">No Folder</option>
                             <!-- Dynamic folders injected here -->
                         </select>
                     </div>
-                    <button id="addNoteBtn">Add Note</button>
+                    <button id="addNoteBtn" type="button">Add Note</button>
                 </section>
-                <section id="notesGrid" class="notes-grid"></section>
+                <section id="notesGrid" class="notes-grid" aria-label="Notes Grid"></section>
             </div>
 
             <!-- TRASH VIEW (hidden by default) -->
             <div id="trashView" style="display:none;">
-                <section id="trashGrid" class="notes-grid"></section>
+                <section id="trashGrid" class="notes-grid" aria-label="Trash Grid"></section>
             </div>
 
         </main>
 
     </div>
 
-    <!-- New Folder Modal -->
-    <div id="newFolderModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-button" id="closeFolderModal">&times;</span>
-            <h2>Create Folder</h2>
-            <input type="text" id="folderNameInput" placeholder="Folder Name (e.g., College, Work)">
-            <button id="createFolderBtn">Create</button>
+    <!-- Edit Note Modal -->
+    <div id="editNoteModal" class="modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="editModalHeading">
+        <div class="modal-content edit-modal-content">
+            <span class="close-button" id="closeEditModal" aria-label="Close edit modal">&times;</span>
+            <h2 id="editModalHeading">Edit Note</h2>
+            <div id="editValidationMsg" class="validation-msg" style="display:none;" role="alert"></div>
+            <input type="hidden" id="editNoteId">
+            <label for="editNoteTitle" class="modal-label">Title</label>
+            <input type="text" id="editNoteTitle" placeholder="Note Title (required)">
+            <label for="editNoteSubject" class="modal-label">Subject</label>
+            <input type="text" id="editNoteSubject" placeholder="Subject (e.g., Mathematics, CS, DBMS)">
+            <label for="editNoteContent" class="modal-label">Content</label>
+            <textarea id="editNoteContent" placeholder="Note Content (required)" rows="5"></textarea>
+            <div class="modal-actions">
+                <button id="cancelEditBtn" class="cancel-btn" type="button">Cancel</button>
+                <button id="saveEditBtn" class="save-btn" type="button">Save Changes</button>
+            </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteModalHeading">
+        <div class="modal-content">
+            <span class="close-button" id="closeDeleteModal" aria-label="Close delete modal">&times;</span>
+            <h2 id="deleteModalHeading">Move to Trash?</h2>
+            <p id="deleteConfirmText" class="modal-desc">Are you sure you want to move this note to trash?</p>
+            <div class="modal-actions">
+                <button id="cancelDeleteBtn" class="cancel-btn" type="button">Cancel</button>
+                <button id="confirmDeleteBtn" class="delete-btn" type="button">Move to Trash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Folder Modal -->
+    <div id="newFolderModal" class="modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="newFolderHeading">
+        <div class="modal-content">
+            <span class="close-button" id="closeFolderModal" aria-label="Close folder modal">&times;</span>
+            <h2 id="newFolderHeading">Create Folder</h2>
+            <input type="text" id="folderNameInput" placeholder="Folder Name (e.g., College, Work)">
+            <button id="createFolderBtn" type="button">Create</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification for Action Feedback -->
+    <div id="toastNotification" class="toast" role="status" aria-live="polite"></div>
 
     <script src="script.js"></script>
 </body>

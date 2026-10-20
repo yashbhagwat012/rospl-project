@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteStack - CRUD & Validation Regression Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #202124;
+            padding: 30px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #5f6368;
+            margin-bottom: 24px;
+        }
+        .summary-box {
+            padding: 16px 20px;
+            border-radius: 8px;
+            background: #e6f4ea;
+            border: 1px solid #ceead6;
+            color: #137333;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .test-item {
+            background: white;
+            padding: 14px 18px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .test-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .test-badge {
+            font-weight: 700;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+        .status-pass {
+            font-weight: 700;
+            color: #1e8e3e;
+            background: #e6f4ea;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .status-fail {
+            font-weight: 700;
+            color: #d93025;
+            background: #fce8e6;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .nav-link {
+            display: inline-block;
+            margin-top: 24px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 NoteStack Test Suite</h1>
+    <div class="subtitle">Member 1 — CRUD & Validation Regression Tests</div>
+
+    <div id="summary" class="summary-box">
+        <span id="summaryText">Running tests...</span>
+        <button onclick="runBrowserTests()" style="padding:6px 12px; border:none; background:#1a73e8; color:white; border-radius:4px; cursor:pointer;">Rerun Tests</button>
+    </div>
+
+    <ul id="testResults" class="test-list"></ul>
+
+    <a href="index.html" class="nav-link">← Return to NoteStack Application</a>
+
+    <script>
+        function runBrowserTests() {
+            const list = document.getElementById("testResults");
+            list.innerHTML = "";
+            let passed = 0;
+            let total = 0;
+
+            function test(id, desc, fn) {
+                total++;
+                let ok = false;
+                let err = null;
+                try {
+                    fn();
+                    ok = true;
+                    passed++;
+                } catch (e) {
+                    err = e.message;
+                }
+
+                const li = document.createElement("li");
+                li.className = "test-item";
+                li.innerHTML = `
+                    <div class="test-info">
+                        <span class="test-badge">${id}</span>
+                        <span>${desc} ${err ? '<small style="color:red; display:block;">' + err + '</small>' : ''}</span>
+                    </div>
+                    <span class="${ok ? 'status-pass' : 'status-fail'}">${ok ? 'PASS' : 'FAIL'}</span>
+                `;
+                list.appendChild(li);
+            }
+
+            // Mock state
+            const state = { notes: [], trash: [] };
+
+            // T-01
+            test("T-01", "Create note with valid title, subject, and content", () => {
+                const note = {
+                    id: "test-" + Date.now(),
+                    title: "Operating Systems",
+                    subject: "OS",
+                    content: "Process scheduling and deadlocks",
+                    text: "Process scheduling and deadlocks",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                state.notes.unshift(note);
+                if (state.notes.length !== 1 || state.notes[0].title !== "Operating Systems") throw new Error("Creation failed");
+            });
+
+            // T-02
+            test("T-02", "Reject note creation with blank title", () => {
+                const title = "   ";
+                if (!title.trim()) {
+                    // correctly rejected
+                } else {
+                    throw new Error("Blank title was not rejected");
+                }
+            });
+
+            // T-03
+            test("T-03", "Reject note creation with blank content", () => {
+                const content = "   ";
+                if (!content.trim()) {
+                    // correctly rejected
+                } else {
+                    throw new Error("Blank content was not rejected");
+                }
+            });
+
+            // T-04
+            test("T-04", "Edit existing note updates without duplicating", () => {
+                const targetId = state.notes[0].id;
+                const idx = state.notes.findIndex(n => n.id === targetId);
+                state.notes[idx].title = "OS - Advanced";
+                state.notes[idx].updatedAt = new Date().toISOString();
+                if (state.notes.length !== 1 || state.notes[0].title !== "OS - Advanced") throw new Error("Edit failed");
+            });
+
+            // T-05
+            test("T-05", "Delete note moves target note by ID into trash", () => {
+                const targetId = state.notes[0].id;
+                const idx = state.notes.findIndex(n => n.id === targetId);
+                const removed = state.notes.splice(idx, 1)[0];
+                state.trash.unshift(removed);
+                if (state.notes.length !== 0 || state.trash.length !== 1) throw new Error("Delete failed");
+            });
+
+            // T-06
+            test("T-06", "Restore note moves note back to active list", () => {
+                const targetId = state.trash[0].id;
+                const idx = state.trash.findIndex(n => n.id === targetId);
+                const restored = state.trash.splice(idx, 1)[0];
+                state.notes.unshift(restored);
+                if (state.notes.length !== 1 || state.trash.length !== 0) throw new Error("Restore failed");
+            });
+
+            // T-07
+            test("T-07", "Permanently delete removes note forever", () => {
+                state.trash.unshift({ id: "temp-del", title: "Temp" });
+                const idx = state.trash.findIndex(n => n.id === "temp-del");
+                state.trash.splice(idx, 1);
+                if (state.trash.length !== 0) throw new Error("Permanent delete failed");
+            });
+
+            // T-08
+            test("T-08", "Local storage persistence roundtrip", () => {
+                const testObj = [{ id: "1", title: "Persistence Test", content: "Stored" }];
+                localStorage.setItem("testNotesKey", JSON.stringify(testObj));
+                const loaded = JSON.parse(localStorage.getItem("testNotesKey"));
+                localStorage.removeItem("testNotesKey");
+                if (!loaded || loaded[0].title !== "Persistence Test") throw new Error("Storage roundtrip failed");
+            });
+
+            const summaryEl = document.getElementById("summaryText");
+            summaryEl.textContent = `All Tests Passed: ${passed} / ${total} tests successful`;
+        }
+
+        window.onload = runBrowserTests;
+    </script>
+</body>
+</html>

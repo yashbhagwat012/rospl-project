@@ -565,3 +565,266 @@ body {
     cursor: pointer;
     width: 100%;
 }
+
+
+/* ================= CRUD & VALIDATION ENHANCEMENTS ================= */
+
+/* Note Title & Subject input fields in create note */
+.note-title-input,
+.note-subject-input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.note-title-input {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.note-title-input:focus,
+.note-subject-input:focus,
+.create-note textarea:focus {
+    border-color: #1a73e8;
+}
+
+/* Validation Feedback Message */
+.validation-msg {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    background-color: #fce8e6;
+    color: #c5221f;
+    border: 1px solid #fad2cf;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dark-mode .validation-msg {
+    background-color: #3c1e1e;
+    color: #f28b82;
+    border-color: #5c2828;
+}
+
+/* Note Card Structure Enhancements */
+.note-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 160px;
+}
+
+.note-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.note-subject-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: #e8f0fe;
+    color: #1a73e8;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dark-mode .note-subject-badge {
+    background-color: #1a3050;
+    color: #8ab4f8;
+}
+
+.note-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 8px;
+    word-break: break-word;
+}
+
+.dark-mode .note-title {
+    color: #ffffff;
+}
+
+.note-content {
+    font-size: 14px;
+    color: #3c4043;
+    line-height: 1.5;
+    flex-grow: 1;
+    word-break: break-word;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+}
+
+.dark-mode .note-content {
+    color: #bdc1c6;
+}
+
+.note-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid #f1f3f4;
+}
+
+.dark-mode .note-card-footer {
+    border-top-color: #333;
+}
+
+.note-date {
+    font-size: 11px;
+    color: #80868b;
+}
+
+.dark-mode .note-date {
+    color: #9aa0a6;
+}
+
+/* Modal Enhancements */
+.edit-modal-content {
+    width: 480px;
+    max-width: 90vw;
+}
+
+.modal-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5f6368;
+    margin-bottom: 5px;
+}
+
+.dark-mode .modal-label {
+    color: #9aa0a6;
+}
+
+.modal-desc {
+    font-size: 14px;
+    color: #5f6368;
+    margin-bottom: 20px;
+    word-break: break-word;
+}
+
+.dark-mode .modal-desc {
+    color: #bdc1c6;
+}
+
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+}
+
+.dark-mode .modal-content textarea {
+    background-color: #333;
+    border-color: #555;
+    color: #e8eaed;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.modal-actions button {
+    width: auto;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.cancel-btn {
+    background: #e8eaed !important;
+    color: #3c4043 !important;
+}
+
+.cancel-btn:hover {
+    background: #dadce0 !important;
+}
+
+.dark-mode .cancel-btn {
+    background: #3c4043 !important;
+    color: #e8eaed !important;
+}
+
+.dark-mode .cancel-btn:hover {
+    background: #4d5156 !important;
+}
+
+.save-btn {
+    background: #1a73e8 !important;
+    color: white !important;
+}
+
+.save-btn:hover {
+    background: #1558b0 !important;
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    background: #323232;
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.success {
+    background: #1e8e3e;
+}
+
+.toast.error {
+    background: #d93025;
+}
+
+/* Dark mode inputs in create-note */
+.dark-mode .note-title-input,
+.dark-mode .note-subject-input {
+    background-color: #1e1e1e;
+    color: #e8eaed;
+    border-color: #444;
+}
+
+.dark-mode .note-title-input:focus,
+.dark-mode .note-subject-input:focus {
+    border-color: #8ab4f8;
+}
