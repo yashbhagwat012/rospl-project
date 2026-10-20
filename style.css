@@ -105,6 +105,141 @@ body {
     border: 1px solid #ccc;
 }
 
+.search-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 4px 12px;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-container:focus-within {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.search-icon {
+    font-size: 15px;
+    color: #5f6368;
+    user-select: none;
+}
+
+.topbar input#searchInput {
+    width: 100%;
+    flex: 1;
+    padding: 8px 4px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    background: transparent;
+    color: #202124;
+}
+
+.search-scope-select {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #dadce0;
+    background: #f8f9fa;
+    font-size: 13px;
+    font-weight: 500;
+    color: #3c4043;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-scope-select:hover {
+    background: #f1f3f4;
+}
+
+.search-action-btn {
+    border: 1px solid #dadce0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5f6368;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.search-action-btn:hover {
+    background: #f1f3f4;
+    color: #202124;
+}
+
+.case-toggle-btn .case-label {
+    letter-spacing: -1px;
+    font-family: inherit;
+    font-weight: 700;
+}
+
+.case-toggle-btn.active {
+    background: #e8f0fe;
+    color: #1a73e8;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 1px #1a73e8;
+}
+
+.clear-search-btn {
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 14px;
+    color: #70757a;
+}
+
+.clear-search-btn:hover {
+    background: #e8eaed;
+    color: #202124;
+}
+
+.search-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 8px 14px;
+    background: #e8f0fe;
+    border-left: 4px solid #1a73e8;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #174ea6;
+}
+
+.search-reset-link {
+    background: none;
+    border: none;
+    color: #1a73e8;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.search-reset-link:hover {
+    color: #1557b0;
+}
+
+.search-highlight {
+    background-color: #ffe082;
+    color: #202124;
+    border-radius: 2px;
+    padding: 1px 2px;
+}
+
 .create-note {
     background: white;
     padding: 15px;
@@ -238,10 +373,72 @@ body {
 }
 
 .dark-mode .topbar input {
-    background-color: #2a2a2a;
+    background-color: transparent;
     color: #e8eaed;
-    border: 1px solid #444;
-    border-radius: 8px;
+}
+
+.dark-mode .search-container {
+    background-color: #2a2a2a;
+    border-color: #444;
+    box-shadow: none;
+}
+
+.dark-mode .search-container:focus-within {
+    border-color: #8ab4f8;
+    box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+}
+
+.dark-mode .topbar input#searchInput {
+    color: #e8eaed;
+    background: transparent;
+}
+
+.dark-mode .search-icon {
+    color: #9aa0a6;
+}
+
+.dark-mode .search-scope-select {
+    background: #333;
+    border-color: #555;
+    color: #e8eaed;
+}
+
+.dark-mode .search-action-btn {
+    background: #333;
+    border-color: #555;
+    color: #9aa0a6;
+}
+
+.dark-mode .search-action-btn:hover {
+    background: #3c4043;
+    color: #e8eaed;
+}
+
+.dark-mode .case-toggle-btn.active {
+    background: #174ea6;
+    color: #ffffff;
+    border-color: #8ab4f8;
+    box-shadow: 0 0 0 1px #8ab4f8;
+}
+
+.dark-mode .clear-search-btn:hover {
+    background: #3c4043;
+    color: #e8eaed;
+}
+
+.dark-mode .search-status {
+    background: #1c2b42;
+    border-left-color: #8ab4f8;
+    color: #aecbfa;
+}
+
+.dark-mode .search-reset-link {
+    color: #8ab4f8;
+}
+
+.dark-mode .search-highlight {
+    background-color: #fdd835;
+    color: #202124;
 }
 
 .dark-mode .topbar input::placeholder {
@@ -827,4 +1024,20 @@ body {
 .dark-mode .note-title-input:focus,
 .dark-mode .note-subject-input:focus {
     border-color: #8ab4f8;
+}
+
+/* Responsive adjustments for search bar */
+@media (max-width: 768px) {
+    .main {
+        padding: 15px;
+    }
+    .search-container {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .search-scope-select,
+    .case-toggle-btn {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
 }

@@ -38,7 +38,22 @@
         <main class="main" role="main">
 
             <header class="topbar">
-                <input type="text" id="searchInput" placeholder="Search notes..." aria-label="Search notes">
+                <div class="search-container">
+                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Search note titles..." aria-label="Search note titles">
+                    <select id="searchScopeSelect" class="search-scope-select" aria-label="Search Scope" title="Filter search scope">
+                        <option value="title" selected>Title Only</option>
+                        <option value="all">All Fields</option>
+                    </select>
+                    <button id="caseSensitiveBtn" class="search-action-btn case-toggle-btn" type="button" aria-label="Toggle case-sensitive title search" aria-pressed="false" title="Match Case (Case Sensitive Search) [Alt+C]">
+                        <span class="case-label">Aa</span>
+                    </button>
+                    <button id="clearSearchBtn" class="search-action-btn clear-search-btn" type="button" aria-label="Clear search" title="Clear search [Esc]" style="display:none;">✕</button>
+                </div>
+                <div id="searchStatus" class="search-status" style="display:none;" aria-live="polite">
+                    <span id="searchStatusText"></span>
+                    <button id="resetSearchFilterBtn" type="button" class="search-reset-link">Clear search</button>
+                </div>
             </header>
 
             <!-- NOTES VIEW -->
