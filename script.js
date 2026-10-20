@@ -6,6 +6,12 @@ const noteValidationMsg = document.getElementById("noteValidationMsg");
 const addNoteBtn = document.getElementById("addNoteBtn");
 const notesGrid = document.getElementById("notesGrid");
 const searchInput = document.getElementById("searchInput");
+const clearSearchBtn = document.getElementById("clearSearchBtn");
+const caseSensitiveBtn = document.getElementById("caseSensitiveBtn");
+const searchScopeSelect = document.getElementById("searchScopeSelect");
+const searchStatus = document.getElementById("searchStatus");
+const searchStatusText = document.getElementById("searchStatusText");
+const resetSearchFilterBtn = document.getElementById("resetSearchFilterBtn");
 const trashGrid = document.getElementById("trashGrid");
 const darkModeBtn = document.getElementById("darkModeBtn");
 const labelCheckboxes = document.querySelectorAll(".label-checkbox");
@@ -50,6 +56,8 @@ const navTrash = document.getElementById("navTrash");
 let currentFilter = "all"; // Category or folder filter
 let pendingDeleteNoteId = null;
 let toastTimeout = null;
+let isCaseSensitive = false;
+let searchScope = "title"; // "title" (Title Search) or "all" (All Fields)
 
 /* ===========================
    STORAGE & DATA MODEL
@@ -163,6 +171,75 @@ function saveFolders() {
 
 // Initial sync save
 saveNotes();
+
+/* ===========================
+   SEARCH & TEXT UTILITIES
+=========================== */
+
+function escapeRegExp(string) {
+    return String(string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function escapeHTML(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function highlightMatch(rawText, query, caseSensitive = false) {
+    if (!rawText) return "";
+    const safeText = escapeHTML(rawText);
+    const trimmedQuery = query ? query.trim() : "";
+    if (!trimmedQuery) return safeText;
+
+    try {
+        const escaped = escapeRegExp(escapeHTML(trimmedQuery));
+        const flags = caseSensitive ? "g" : "gi";
+        const regex = new RegExp(`(${escaped})`, flags);
+        return safeText.replace(regex, '<mark class="search-highlight">$1</mark>');
+    } catch {
+        return safeText;
+    }
+}
+
+function matchesNoteSearch(note, query, { scope = "title", caseSensitive = false } = {}) {
+    const trimmed = query ? query.trim() : "";
+    if (!trimmed) return true;
+
+    // Fast-path for #label search
+    if (trimmed.startsWith("#")) {
+        const labelQuery = trimmed.substring(1);
+        if (!labelQuery) return true;
+        return Array.isArray(note.labels) && note.labels.some(label =>
+            caseSensitive ? label.includes(labelQuery) : label.toLowerCase().includes(labelQuery.toLowerCase())
+        );
+    }
+
+    const title = note.title || "";
+    const content = note.content !== undefined ? String(note.content) : (note.text !== undefined ? String(note.text) : "");
+    const subject = note.subject || "";
+
+    if (caseSensitive) {
+        if (scope === "title") {
+            return title.includes(trimmed);
+        } else {
+            return title.includes(trimmed) || content.includes(trimmed) || subject.includes(trimmed);
+        }
+    } else {
+        const qLower = trimmed.toLowerCase();
+        if (scope === "title") {
+            return title.toLowerCase().includes(qLower);
+        } else {
+            return title.toLowerCase().includes(qLower) ||
+                   content.toLowerCase().includes(qLower) ||
+                   subject.toLowerCase().includes(qLower);
+        }
+    }
+}
 
 /* ===========================
    UI FEEDBACK & NOTIFICATIONS
@@ -358,10 +435,15 @@ function createNoteCard(note, isTrash = false) {
 
     card.appendChild(headerDiv);
 
-    // Title (h3 with safe textContent)
+    // Title (h3 with safe textContent and highlight)
     const titleEl = document.createElement("h3");
     titleEl.className = "note-title";
-    titleEl.textContent = note.title || "Untitled Note";
+    const activeQuery = searchInput ? searchInput.value.trim() : "";
+    if (activeQuery && !isTrash) {
+        titleEl.innerHTML = highlightMatch(note.title || "Untitled Note", activeQuery, isCaseSensitive);
+    } else {
+        titleEl.textContent = note.title || "Untitled Note";
+    }
     card.appendChild(titleEl);
 
     // Content (p with safe textContent)
@@ -623,31 +705,66 @@ function renderTrash() {
    FILTERING & RENDERING
 =========================== */
 
-function filterNotesByCategory(category) {
-    currentFilter = category;
+function getFilteredNotes({
+    query = "",
+    scope = searchScope,
+    caseSensitive = isCaseSensitive,
+    category = currentFilter
+} = {}) {
+    const trimmed = typeof query === "string" ? query.trim() : "";
+    let result = notes;
 
-    if (category === "all") {
-        renderNotes(searchInput ? searchInput.value : "");
-    } else {
-        const filtered = notes.filter(note =>
+    // Apply category / folder filter if not "all"
+    if (category && category !== "all") {
+        result = result.filter(note =>
             (note.labels && note.labels.includes(category)) ||
             (note.folder === category) ||
             (note.subject && note.subject.toLowerCase() === category.toLowerCase())
         );
-
-        notesGrid.innerHTML = "";
-
-        if (filtered.length === 0) {
-            showEmptyState(
-                notesGrid,
-                `No ${category} notes found. Start by adding your first note!`
-            );
-        } else {
-            filtered.forEach(note => {
-                notesGrid.appendChild(createNoteCard(note));
-            });
-        }
     }
+
+    // Apply search query filter if non-empty
+    if (trimmed) {
+        result = result.filter(note =>
+            matchesNoteSearch(note, trimmed, { scope, caseSensitive })
+        );
+    }
+
+    return result;
+}
+
+function clearSearch() {
+    if (searchInput) {
+        searchInput.value = "";
+        searchInput.focus();
+    }
+    renderNotes("");
+}
+
+function toggleCaseSensitive(forceValue = null) {
+    if (forceValue !== null) {
+        isCaseSensitive = Boolean(forceValue);
+    } else {
+        isCaseSensitive = !isCaseSensitive;
+    }
+
+    if (caseSensitiveBtn) {
+        caseSensitiveBtn.classList.toggle("active", isCaseSensitive);
+        caseSensitiveBtn.setAttribute("aria-pressed", String(isCaseSensitive));
+        caseSensitiveBtn.title = isCaseSensitive
+            ? "Match Case (Case Sensitive) is ON [Alt+C]"
+            : "Match Case (Case Sensitive Search) [Alt+C]";
+    }
+
+    showToast(
+        isCaseSensitive ? "Case-sensitive title search ON" : "Case-sensitive title search OFF",
+        "success"
+    );
+    renderNotes();
+}
+
+function filterNotesByCategory(category) {
+    currentFilter = category;
 
     // Update active state in sidebar
     document.querySelectorAll(".sidebar li").forEach(li => {
@@ -663,37 +780,74 @@ function filterNotesByCategory(category) {
             if (nav.dataset.folder === category) nav.classList.add("active");
         });
     }
+
+    renderNotes();
 }
 
-function renderNotes(filter = "") {
-    if (currentFilter !== "all") {
-        filterNotesByCategory(currentFilter);
-        return;
+function renderNotes(filterQuery = null) {
+    if (!notesGrid) return;
+
+    const query = filterQuery !== null ? filterQuery : (searchInput ? searchInput.value : "");
+    const trimmed = typeof query === "string" ? query.trim() : "";
+
+    // Toggle clear search button visibility
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = trimmed ? "inline-flex" : "none";
+    }
+
+    const filteredNotes = getFilteredNotes({
+        query: trimmed,
+        scope: searchScope,
+        caseSensitive: isCaseSensitive,
+        category: currentFilter
+    });
+
+    // Update search status message
+    if (searchStatus && searchStatusText) {
+        if (trimmed) {
+            const scopeLabel = searchScope === "title" ? "titles" : "all fields";
+            const caseLabel = isCaseSensitive ? "case-sensitive" : "case-insensitive";
+            const categoryLabel = currentFilter !== "all" ? ` within "${currentFilter}"` : "";
+            const countText = `${filteredNotes.length} note${filteredNotes.length === 1 ? "" : "s"}`;
+
+            searchStatusText.textContent = `Found ${countText} matching "${trimmed}" (${caseLabel}, ${scopeLabel}${categoryLabel})`;
+            searchStatus.style.display = "flex";
+        } else {
+            searchStatus.style.display = "none";
+        }
     }
 
     notesGrid.innerHTML = "";
-    const trimmedFilter = filter.trim().toLowerCase();
-
-    let filteredNotes = notes;
-    if (trimmedFilter.startsWith("#")) {
-        const labelFilter = trimmedFilter.substring(1);
-        filteredNotes = notes.filter(note =>
-            note.labels && note.labels.some(label => label.toLowerCase().includes(labelFilter))
-        );
-    } else if (trimmedFilter !== "") {
-        filteredNotes = notes.filter(note => {
-            const titleMatch = note.title && note.title.toLowerCase().includes(trimmedFilter);
-            const contentMatch = note.content && note.content.toLowerCase().includes(trimmedFilter);
-            const subjectMatch = note.subject && note.subject.toLowerCase().includes(trimmedFilter);
-            return titleMatch || contentMatch || subjectMatch;
-        });
-    }
 
     if (filteredNotes.length === 0) {
-        if (trimmedFilter !== "") {
+        if (trimmed) {
+            const scopeDesc = searchScope === "title" ? "title" : "note";
+            const caseDesc = isCaseSensitive ? "case-sensitive" : "case-insensitive";
+            notesGrid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No matching notes found</h3>
+                    <p>No notes matched "<strong>${escapeHTML(trimmed)}</strong>" using ${caseDesc} ${scopeDesc} search${currentFilter !== "all" ? ` within "${escapeHTML(currentFilter)}"` : ""}.</p>
+                    <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <button id="emptyClearSearchBtn" class="sidebar-btn" type="button" style="padding: 6px 14px; background: #1a73e8; color: white;">Clear Search</button>
+                        ${isCaseSensitive ? '<button id="emptyDisableCaseBtn" class="sidebar-btn" type="button" style="padding: 6px 14px; background: #f1f3f4; color: #202124;">Try Case-Insensitive</button>' : ''}
+                    </div>
+                </div>
+            `;
+            const emptyClearBtn = document.getElementById("emptyClearSearchBtn");
+            if (emptyClearBtn) {
+                emptyClearBtn.addEventListener("click", clearSearch);
+            }
+            const emptyDisableCaseBtn = document.getElementById("emptyDisableCaseBtn");
+            if (emptyDisableCaseBtn) {
+                emptyDisableCaseBtn.addEventListener("click", () => {
+                    toggleCaseSensitive(false);
+                });
+            }
+        } else if (currentFilter !== "all") {
             showEmptyState(
                 notesGrid,
-                `No notes found matching "${filter}". Try a different search or add a new note.`
+                `No ${currentFilter} notes found. Start by adding your first note!`
             );
         } else {
             showEmptyState(notesGrid, "Create your first study note using the form above!");
@@ -706,37 +860,32 @@ function renderNotes(filter = "") {
     });
 }
 
-// Search input handling
+// Search and filter event listeners
 if (searchInput) {
     searchInput.addEventListener("input", () => {
-        if (currentFilter !== "all") {
-            const query = searchInput.value.trim().toLowerCase();
-            const filtered = notes.filter(note => {
-                const categoryMatch =
-                    (note.labels && note.labels.includes(currentFilter)) ||
-                    (note.folder === currentFilter) ||
-                    (note.subject && note.subject.toLowerCase() === currentFilter.toLowerCase());
-                const textMatch =
-                    !query ||
-                    (note.title && note.title.toLowerCase().includes(query)) ||
-                    (note.content && note.content.toLowerCase().includes(query)) ||
-                    (note.subject && note.subject.toLowerCase().includes(query));
-                return categoryMatch && textMatch;
-            });
+        renderNotes(searchInput.value);
+    });
+}
 
-            notesGrid.innerHTML = "";
-            if (filtered.length === 0) {
-                notesGrid.innerHTML = `<p style="text-align:center; margin-top:20px; color:#777;">
-                    No ${currentFilter} notes found matching "${searchInput.value}"
-                </p>`;
-            } else {
-                filtered.forEach(note => {
-                    notesGrid.appendChild(createNoteCard(note));
-                });
-            }
-        } else {
-            renderNotes(searchInput.value);
-        }
+if (clearSearchBtn) {
+    clearSearchBtn.addEventListener("click", clearSearch);
+}
+
+if (resetSearchFilterBtn) {
+    resetSearchFilterBtn.addEventListener("click", clearSearch);
+}
+
+if (caseSensitiveBtn) {
+    caseSensitiveBtn.addEventListener("click", () => {
+        toggleCaseSensitive();
+    });
+}
+
+if (searchScopeSelect) {
+    searchScopeSelect.addEventListener("change", () => {
+        searchScope = searchScopeSelect.value;
+        showToast(`Search scope: ${searchScope === "title" ? "Title Only" : "All Fields"}`, "success");
+        renderNotes();
     });
 }
 
@@ -887,8 +1036,7 @@ document.addEventListener("keydown", (e) => {
             return;
         }
         if (searchInput && searchInput.value !== "") {
-            searchInput.value = "";
-            renderNotes();
+            clearSearch();
             return;
         }
     }
@@ -904,6 +1052,13 @@ document.addEventListener("keydown", (e) => {
     if (e.altKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         if (searchInput) searchInput.focus();
+        return;
+    }
+
+    // ALT + C -> Toggle case-sensitive title search
+    if (e.altKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        toggleCaseSensitive();
         return;
     }
 
