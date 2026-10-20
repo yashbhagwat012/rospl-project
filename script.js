@@ -7,6 +7,7 @@ const addNoteBtn = document.getElementById("addNoteBtn");
 const notesGrid = document.getElementById("notesGrid");
 const searchInput = document.getElementById("searchInput");
 const clearSearchBtn = document.getElementById("clearSearchBtn");
+const exportNotesBtn = document.getElementById("exportNotesBtn");
 const caseSensitiveBtn = document.getElementById("caseSensitiveBtn");
 const searchScopeSelect = document.getElementById("searchScopeSelect");
 const searchStatus = document.getElementById("searchStatus");
@@ -254,6 +255,51 @@ function showToast(message, type = "success") {
     toastTimeout = setTimeout(() => {
         toastNotification.className = "toast";
     }, 2500);
+}
+
+function formatNotesForTextExport(notesToExport) {
+    const separator = "------------------------------------------------------------";
+    return notesToExport.map((note, index) => {
+        const rawContent = note.content !== undefined ? String(note.content) : String(note.text || "");
+        const content = rawContent.replace(/\r?\n/g, "\r\n");
+        return [
+            `Note ${index + 1}`,
+            `Title: ${note.title || "Untitled Note"}`,
+            `Subject: ${note.subject || "General"}`,
+            "",
+            "Content:",
+            content
+        ].join("\r\n");
+    }).join(`\r\n\r\n${separator}\r\n\r\n`);
+}
+
+function exportNotesAsText() {
+    if (notes.length === 0) {
+        showToast("No notes to export.", "error");
+        return;
+    }
+
+    const blob = new Blob([formatNotesForTextExport(notes)], { type: "text/plain;charset=utf-8" });
+    const downloadLink = document.createElement("a");
+    const objectUrl = URL.createObjectURL(blob);
+    downloadLink.href = objectUrl;
+    downloadLink.download = "student-notes.txt";
+
+    try {
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    } finally {
+        if (downloadLink.parentNode) {
+            downloadLink.parentNode.removeChild(downloadLink);
+        }
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    }
+
+    showToast("Notes exported successfully!", "success");
+}
+
+if (exportNotesBtn) {
+    exportNotesBtn.addEventListener("click", exportNotesAsText);
 }
 
 function showValidationMessage(element, message) {
