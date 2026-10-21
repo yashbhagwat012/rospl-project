@@ -17,6 +17,11 @@ const trashGrid = document.getElementById("trashGrid");
 const darkModeBtn = document.getElementById("darkModeBtn");
 const labelCheckboxes = document.querySelectorAll(".label-checkbox");
 
+// Subject Filter Elements
+const subjectFilterSelect = document.getElementById("subjectFilterSelect");
+const clearSubjectFilterBtn = document.getElementById("clearSubjectFilterBtn");
+const subjectFilterStatus = document.getElementById("subjectFilterStatus");
+
 // Folder Elements
 const newFolderBtn = document.getElementById("newFolderBtn");
 const newFolderModal = document.getElementById("newFolderModal");
@@ -55,6 +60,7 @@ const navTrash = document.getElementById("navTrash");
 
 // State
 let currentFilter = "all"; // Category or folder filter
+let activeSubjectFilter = ""; // Subject dropdown filter (empty = All Subjects)
 let pendingDeleteNoteId = null;
 let toastTimeout = null;
 let isCaseSensitive = false;
@@ -411,6 +417,7 @@ function addNote() {
 
     notes.unshift(newNote); // Put newest note first
     saveNotes();
+    buildSubjectDropdown(); // Refresh subject dropdown with any new subject
 
     // Reset inputs
     if (noteTitleInput) noteTitleInput.value = "";
@@ -615,6 +622,7 @@ function saveEditedNote() {
     notes[noteIndex].updatedAt = new Date().toISOString();
 
     saveNotes();
+    buildSubjectDropdown(); // Refresh subject dropdown in case subject changed
     closeEditNoteModal();
 
     // Re-render current view
@@ -676,6 +684,7 @@ function executeDeleteNote() {
 
     saveNotes();
     saveTrash();
+    buildSubjectDropdown(); // Refresh subject dropdown in case deleted note was sole owner of a subject
     closeDeleteConfirmModal();
 
     if (currentFilter !== "all") {
@@ -755,7 +764,8 @@ function getFilteredNotes({
     query = "",
     scope = searchScope,
     caseSensitive = isCaseSensitive,
-    category = currentFilter
+    category = currentFilter,
+    subjectFilter = activeSubjectFilter
 } = {}) {
     const trimmed = typeof query === "string" ? query.trim() : "";
     let result = notes;
@@ -769,6 +779,13 @@ function getFilteredNotes({
         );
     }
 
+    // Apply subject dropdown filter (works alongside search and category filters)
+    if (subjectFilter) {
+        result = result.filter(note =>
+            note.subject && note.subject.toLowerCase() === subjectFilter.toLowerCase()
+        );
+    }
+
     // Apply search query filter if non-empty
     if (trimmed) {
         result = result.filter(note =>
@@ -777,6 +794,74 @@ function getFilteredNotes({
     }
 
     return result;
+}
+
+/**
+ * Rebuilds the subject filter dropdown from the current notes array.
+ * Preserves the currently selected subject if it still exists.
+ */
+function buildSubjectDropdown() {
+    if (!subjectFilterSelect) return;
+
+    // Collect unique, non-empty subjects (case-insensitive dedup, preserve original case)
+    const subjectMap = new Map();
+    notes.forEach(note => {
+        if (note.subject && note.subject.trim()) {
+            const key = note.subject.trim().toLowerCase();
+            if (!subjectMap.has(key)) {
+                subjectMap.set(key, note.subject.trim());
+            }
+        }
+    });
+
+    const subjects = Array.from(subjectMap.values()).sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+
+    // Preserve current selection if it still exists in notes
+    const previousSelection = activeSubjectFilter;
+    const selectionStillValid = subjects.some(
+        s => s.toLowerCase() === previousSelection.toLowerCase()
+    );
+
+    // Rebuild options
+    subjectFilterSelect.innerHTML = '<option value="">All Subjects</option>';
+    subjects.forEach(subject => {
+        const option = document.createElement("option");
+        option.value = subject;
+        option.textContent = subject;
+        subjectFilterSelect.appendChild(option);
+    });
+
+    // Restore or reset selection
+    if (previousSelection && selectionStillValid) {
+        subjectFilterSelect.value = previousSelection;
+    } else if (previousSelection && !selectionStillValid) {
+        // Previously selected subject no longer exists — reset filter
+        activeSubjectFilter = "";
+        subjectFilterSelect.value = "";
+        updateSubjectFilterUI();
+    }
+}
+
+/**
+ * Updates the subject filter clear button and status label to reflect
+ * the current activeSubjectFilter value.
+ */
+function updateSubjectFilterUI() {
+    if (!clearSubjectFilterBtn || !subjectFilterStatus) return;
+
+    if (activeSubjectFilter) {
+        clearSubjectFilterBtn.style.display = "inline-flex";
+        subjectFilterStatus.textContent = `Filtering by: "${activeSubjectFilter}"`;
+        subjectFilterStatus.style.display = "inline";
+        if (subjectFilterSelect) subjectFilterSelect.classList.add("active");
+    } else {
+        clearSubjectFilterBtn.style.display = "none";
+        subjectFilterStatus.textContent = "";
+        subjectFilterStatus.style.display = "none";
+        if (subjectFilterSelect) subjectFilterSelect.classList.remove("active");
+    }
 }
 
 function clearSearch() {
@@ -932,6 +1017,32 @@ if (searchScopeSelect) {
         searchScope = searchScopeSelect.value;
         showToast(`Search scope: ${searchScope === "title" ? "Title Only" : "All Fields"}`, "success");
         renderNotes();
+    });
+}
+
+// Subject filter dropdown — change event
+if (subjectFilterSelect) {
+    subjectFilterSelect.addEventListener("change", () => {
+        activeSubjectFilter = subjectFilterSelect.value;
+        updateSubjectFilterUI();
+        // Preserve any active search query while applying the new subject filter
+        renderNotes(searchInput ? searchInput.value : "");
+        if (activeSubjectFilter) {
+            showToast(`Subject filter: "${activeSubjectFilter}"`, "success");
+        } else {
+            showToast("Subject filter cleared", "success");
+        }
+    });
+}
+
+// Clear subject filter button — resets subject filter but keeps search query intact
+if (clearSubjectFilterBtn) {
+    clearSubjectFilterBtn.addEventListener("click", () => {
+        activeSubjectFilter = "";
+        if (subjectFilterSelect) subjectFilterSelect.value = "";
+        updateSubjectFilterUI();
+        renderNotes(searchInput ? searchInput.value : "");
+        showToast("Subject filter cleared", "success");
     });
 }
 
@@ -1128,5 +1239,7 @@ document.addEventListener("keydown", (e) => {
 =========================== */
 
 renderFolders();
+buildSubjectDropdown();
+updateSubjectFilterUI();
 renderNotes();
 renderTrash();

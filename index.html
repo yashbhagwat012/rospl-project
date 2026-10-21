@@ -55,6 +55,17 @@
                     <span id="searchStatusText"></span>
                     <button id="resetSearchFilterBtn" type="button" class="search-reset-link">Clear search</button>
                 </div>
+
+                <!-- Subject Filter Bar -->
+                <div class="subject-filter-bar" id="subjectFilterBar">
+                    <label for="subjectFilterSelect" class="subject-filter-label">📚 Subject:</label>
+                    <select id="subjectFilterSelect" class="subject-filter-select" aria-label="Filter by subject">
+                        <option value="">All Subjects</option>
+                        <!-- Options injected dynamically by script.js -->
+                    </select>
+                    <button id="clearSubjectFilterBtn" class="subject-filter-clear-btn" type="button" aria-label="Clear subject filter" style="display:none;">✕ Clear</button>
+                    <span id="subjectFilterStatus" class="subject-filter-status" aria-live="polite" style="display:none;"></span>
+                </div>
             </header>
 
             <!-- NOTES VIEW -->
